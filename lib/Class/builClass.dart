@@ -9,7 +9,7 @@ import 'package:built_collection/src/list.dart';
 
 mixin BuildClass implements Navigation {
 
-  StaggeredGridView buildStaggeredGridView(BuiltList<Hits> hits,FavoriBlock bloc) {
+  StaggeredGridView buildStaggeredGridView(BuiltList<Hits> hits,FavoriBlock bloc,bool quality) {
     return StaggeredGridView.countBuilder(
               padding: EdgeInsets.all(4),
               shrinkWrap: true,
@@ -22,11 +22,11 @@ mixin BuildClass implements Navigation {
               mainAxisSpacing: 8.0,
               crossAxisSpacing: 8.0,
               itemBuilder: (BuildContext context, int index) =>
-                  buildImage(context,hits,index,bloc),
+                  buildImage(context,hits,index,bloc,quality),
             );
   }
 
-  Widget buildImage(BuildContext c, BuiltList<Hits> h,int index,FavoriBlock bloc) {
+  Widget buildImage(BuildContext c, BuiltList<Hits> h,int index,FavoriBlock bloc,bool quality) {
     return InkWell(
       radius: 15,
       borderRadius: BorderRadius.circular(15),
@@ -37,6 +37,7 @@ mixin BuildClass implements Navigation {
               favBloc: bloc,
               hits:h,
               index: index,
+              quality:quality
             ));
       },
       child: ClipRRect(
@@ -44,7 +45,7 @@ mixin BuildClass implements Navigation {
         child: Hero(
           tag: h[index].id,
           child: Image.network(
-            h[index].previewURL,
+           quality?h[index].largeImageURL :h[index].previewURL,
             fit: BoxFit.cover,
             loadingBuilder: (context, child, loadingProgress) {
               if (loadingProgress == null) return child;

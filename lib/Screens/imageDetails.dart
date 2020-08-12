@@ -16,7 +16,8 @@ class ImageDetails extends StatefulWidget {
   final BuiltList<Hits> hits;
   final int index;
   final favBloc;
-  ImageDetails({Key key, this.hits, this.index, this.favBloc})
+  final bool quality;
+  ImageDetails({Key key, this.hits, this.index, this.favBloc,this.quality=false})
       : super(key: key);
 
   @override
@@ -91,7 +92,7 @@ class _ImageDetailsState extends State<ImageDetails>
                   width: size.width,
                   height: size.height,
                   child: Image.network(
-                    widget.hits[i].previewURL,
+                   widget.quality?widget.hits[i].largeImageURL:widget.hits[i].previewURL,
                     fit: BoxFit.cover,
                     loadingBuilder: (context, child, loadingProgress) {
                       if (loadingProgress == null) return child;

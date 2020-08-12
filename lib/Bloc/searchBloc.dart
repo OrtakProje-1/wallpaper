@@ -5,7 +5,7 @@ import 'package:wallpaperApp/Models/wallpaper.dart';
 import 'package:wallpaperApp/Service/network.dart';
 
 class SearchBloc extends Bloc<ImageSearchEvent, ImageSearchState> {
-  SearchBloc() : super(ImageSearchEmpty());
+  SearchBloc(): super(ImageSearchEmpty());
 
   @override
   Stream<ImageSearchState> mapEventToState(ImageSearchEvent event) async* {

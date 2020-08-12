@@ -115,19 +115,12 @@ class _SearchPageState extends State<SearchPage> with Navigation, BuildClass {
                     ),
                   );
                 } else if (state is ImageSearchSuccess) {
-                  return StaggeredGridView.countBuilder(
-                    padding: EdgeInsets.all(4),
-                    shrinkWrap: true,
-                    physics: BouncingScrollPhysics(),
-                    addAutomaticKeepAlives: true,
-                    crossAxisCount: 4,
-                    itemCount: state.wallpaper.hits.length,
-                    staggeredTileBuilder: (int index) =>
-                        StaggeredTile.count(2, index.isEven ? 4 : 3),
-                    mainAxisSpacing: 8.0,
-                    crossAxisSpacing: 8.0,
-                    itemBuilder: (BuildContext context, int index) =>
-                        buildImage(context, state.wallpaper.hits,index,_favBloc),
+                  return StreamBuilder<bool>(
+                    stream: _favBloc.quality,
+                    initialData: false,
+                    builder: (c,q){
+                      return buildStaggeredGridView(state.wallpaper.hits,_favBloc,q.data);
+                    },
                   );
                 } else if (state is ImageSearchError) {
                   return Center(

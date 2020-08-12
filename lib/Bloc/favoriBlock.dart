@@ -18,12 +18,13 @@ class FavoriBlock extends Block {
 
   SharedPreferences _prefs;
   BehaviorSubject<List<FavoriImage>> _favoriImage;
+  BehaviorSubject<bool> quality;
 
   List<FavoriImage> get favoriImages => _favoriImage.value;
   Stream<List<FavoriImage>> get favStream => _favoriImage.stream;
 
   initStream() async {
-    
+    quality=BehaviorSubject.seeded(false); 
     _favoriImage = BehaviorSubject.seeded([]);
   }
 
@@ -71,5 +72,6 @@ class FavoriBlock extends Block {
   @override
   void dispose() {
     _favoriImage.close();
+    quality.close();
   }
 }

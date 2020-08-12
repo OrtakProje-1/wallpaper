@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:provider/provider.dart';
-import 'package:wallpaperApp/Bloc/bloc.dart';
 import 'package:wallpaperApp/Bloc/favoriBlock.dart';
 import 'package:wallpaperApp/Class/builClass.dart';
 import 'package:wallpaperApp/Constant/navigationConstant.dart';
@@ -59,33 +58,51 @@ class _ImageListState extends State<ImageList> with Navigation, BuildClass {
                 
                     navigation(context, Favourites());
                   }),
-              PopupMenuButton(
-                icon: Icon(Icons.more_vert,color: Colors.red,),
-                initialValue: image_type,
-                itemBuilder: (c) => [
-                  PopupMenuItem(
-                    child: ListTile(
-                      dense: true,
-                      title: Text("Resim tipi seç"),
-                      trailing: Icon(Icons.arrow_right),
-                      onTap: (){
-                        RelativeRect position=getPosition(context);
-                        Navigator.pop(context);
-                        showMenu(context:context, position:position, items:getImageTypeItems());
-                      },
-                    ),
-                  ),
-                  PopupMenuItem(
-                    child:RadioListTile(
-                      dense: true,
-                      controlAffinity: ListTileControlAffinity.trailing,
-                      title: Text("Editörün seçimi"),
-                      value:true, groupValue:editorsChoice, onChanged:(v){
-                        setState(()=>editorsChoice=v);
-                        Navigator.pop(context);
-                      }),
-                  ),
-                ],
+              StreamBuilder<bool>(
+                stream:_favBloc.quality,
+                initialData: false,
+                builder: (context,q) {
+                  return PopupMenuButton(
+                    icon: Icon(Icons.more_vert,color: Colors.red,),
+                    initialValue: image_type,
+                    itemBuilder: (c) => [
+                      PopupMenuItem(
+                        child: ListTile(
+                          dense: true,
+                          title: Text("Resim tipi seç"),
+                          trailing: Icon(Icons.arrow_right),
+                          onTap: (){
+                            RelativeRect position=getPosition(context);
+                            Navigator.pop(context);
+                            showMenu(context:context, position:position, items:getImageTypeItems());
+                          },
+                        ),
+                      ),
+                      PopupMenuItem(
+                        child:ListTile(
+                          dense: true,
+                          title: Text("Görüntü kalitesi"),
+                          trailing: Icon(Icons.arrow_right),
+                          onTap: (){
+                            RelativeRect position=getPosition(context);
+                            Navigator.pop(context);
+                            showMenu(context:context, position:position, items:getImageQuality(q.data,_favBloc));
+                          },
+                        ),
+                      ),
+                      PopupMenuItem(
+                        child:RadioListTile(
+                          dense: true,
+                          controlAffinity: ListTileControlAffinity.trailing,
+                          title: Text("Editörün seçimi"),
+                          value:true, groupValue:editorsChoice, onChanged:(v){
+                            setState(()=>editorsChoice=v);
+                            Navigator.pop(context);
+                          }),
+                      ),
+                    ],
+                  );
+                }
               ),
             ],
             backgroundColor: Colors.white,
@@ -99,7 +116,11 @@ class _ImageListState extends State<ImageList> with Navigation, BuildClass {
           future: network.getData(imageType: image_type,editorsChoice:editorsChoice),
           builder: (BuildContext context, AsyncSnapshot<Wallpaper> wal) {
             if (wal.hasData) {
-              return buildStaggeredGridView(wal.data.hits,_favBloc);
+              return StreamBuilder<bool>(
+                initialData: false,
+                stream: _favBloc.quality,
+                builder: (c,q)=>buildStaggeredGridView(wal.data.hits,_favBloc,q.data),
+              );
             } else {
               return Center(
                 child: CircularProgressIndicator(),
@@ -112,19 +133,10 @@ class _ImageListState extends State<ImageList> with Navigation, BuildClass {
           future: network.getData(imageType: image_type,editorsChoice:editorsChoice,order:"latest"),
           builder: (BuildContext context, AsyncSnapshot<Wallpaper> wal) {
             if (wal.hasData) {
-              return StaggeredGridView.countBuilder(
-                padding: EdgeInsets.all(4),
-                shrinkWrap: true,
-                physics: ScrollPhysics(),
-                addAutomaticKeepAlives: true,
-                crossAxisCount: 4,
-                itemCount: wal.data.hits.length,
-                staggeredTileBuilder: (int index) =>
-                    StaggeredTile.count(2, index.isEven ? 4 : 3),
-                mainAxisSpacing: 8.0,
-                crossAxisSpacing: 8.0,
-                itemBuilder: (BuildContext context, int index) =>
-                    buildImage(context, wal.data.hits,index,_favBloc),
+              return StreamBuilder<bool>(
+                initialData: false,
+                stream: _favBloc.quality,
+                builder: (c,q)=>buildStaggeredGridView(wal.data.hits,_favBloc,q.data),
               );
             } else {
               return Center(
@@ -140,6 +152,36 @@ class _ImageListState extends State<ImageList> with Navigation, BuildClass {
   }
 
 
+  List<PopupMenuItem> getImageQuality(bool value,FavoriBlock fav) {
+    return [
+      PopupMenuItem(
+          child: RadioListTile(
+              dense: true,
+              controlAffinity: ListTileControlAffinity.trailing,
+              title: Text("Düşük"),
+              value:false,
+              groupValue:value,
+              onChanged: (v) {
+                Navigator.pop(context);
+                setState(() {
+                  fav.quality.add(false);
+                });
+              })),
+      PopupMenuItem(
+          child: RadioListTile(
+              dense: true,
+              title: Text("Yüksek"),
+              controlAffinity: ListTileControlAffinity.trailing,
+              value:true,
+              groupValue:value,
+              onChanged: (v) {
+                Navigator.pop(context);
+                setState(() {
+                  fav.quality.add(true);
+                });
+              })),
+    ];
+  }
   List<PopupMenuItem> getImageTypeItems() {
     return [
       PopupMenuItem(
@@ -202,7 +244,15 @@ class _ImageListState extends State<ImageList> with Navigation, BuildClass {
     Size size=MediaQuery.of(context).size;
     final RenderBox button = context.findRenderObject() as RenderBox;
     final RenderBox overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
-    final RelativeRect position = RelativeRect.fromLTRB(size.width,MediaQuery.of(context).padding.top,0,size.height);
+    final RelativeRect position =  RelativeRect.fromRect(
+      Rect.fromPoints(
+        button.localToGlobal(Offset.zero, ancestor: overlay),
+        button.localToGlobal(button.size.bottomRight(Offset.zero), ancestor: overlay),
+      ),
+      Offset.zero & overlay.size,
+    );
+
+    // RelativeRect.fromLTRB(size.width,MediaQuery.of(context).padding.top,20,size.height);
     return position;
   }
 }
