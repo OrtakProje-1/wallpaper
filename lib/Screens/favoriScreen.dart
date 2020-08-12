@@ -45,7 +45,11 @@ class _FavouritesState extends State<Favourites> with Navigation {
           initialData: [],
           builder: (c, hits) {
             if (hits.hasData) {
-              return buildStaggeredGridView(hits.data, _favBloc);
+              return StreamBuilder<bool>(
+                initialData: false,
+                stream: _favBloc.quality,
+                builder: (c,q)=>buildStaggeredGridView(hits.data, _favBloc,q.data),
+              );
             } else {
               return Center(
                 child: CircularProgressIndicator(),
@@ -58,7 +62,7 @@ class _FavouritesState extends State<Favourites> with Navigation {
   }
 
   StaggeredGridView buildStaggeredGridView(
-      List<FavoriImage> hits, FavoriBlock bloc) {
+      List<FavoriImage> hits, FavoriBlock bloc,bool quality) {
     return StaggeredGridView.countBuilder(
       padding: EdgeInsets.all(4),
       shrinkWrap: true,
@@ -71,12 +75,12 @@ class _FavouritesState extends State<Favourites> with Navigation {
       mainAxisSpacing: 8.0,
       crossAxisSpacing: 8.0,
       itemBuilder: (BuildContext context, int index) =>
-          buildImage(context, hits, index, bloc),
+          buildImage(context, hits, index, bloc,quality),
     );
   }
 
   Widget buildImage(
-      BuildContext c, List<FavoriImage> h, int index, FavoriBlock bloc) {
+      BuildContext c, List<FavoriImage> h, int index, FavoriBlock bloc,bool quality) {
     return InkWell(
       radius: 15,
       borderRadius: BorderRadius.circular(15),
@@ -86,6 +90,7 @@ class _FavouritesState extends State<Favourites> with Navigation {
             ImageDetails(
               hits: h,
               index: index,
+              quality: quality,
             ));
       },
       child: ClipRRect(
@@ -100,7 +105,7 @@ class _FavouritesState extends State<Favourites> with Navigation {
                 left: 0,
                 top: 0,
                 child: Image.network(
-                  h[index].previewURL,
+                quality?h[index].largeImageURL:h[index].previewURL,
                   fit: BoxFit.cover,
                   loadingBuilder: (context, child, loadingProgress) {
                     if (loadingProgress == null) return child;
@@ -145,7 +150,8 @@ class _FavouritesState extends State<Favourites> with Navigation {
 class ImageDetails extends StatefulWidget {
   final List<FavoriImage> hits;
   final int index;
-  ImageDetails({Key key, this.hits, this.index}) : super(key: key);
+  final bool quality;
+  ImageDetails({Key key, this.hits, this.index,this.quality=false}) : super(key: key);
 
   @override
   _ImageDetailsState createState() => _ImageDetailsState();
@@ -219,7 +225,7 @@ class _ImageDetailsState extends State<ImageDetails>
                   width: size.width,
                   height: size.height,
                   child: Image.network(
-                    widget.hits[i].previewURL,
+                 widget.quality?widget.hits[i].largeImageURL:widget.hits[i].previewURL,
                     fit: BoxFit.cover,
                     loadingBuilder: (context, child, loadingProgress) {
                       if (loadingProgress == null) return child;
