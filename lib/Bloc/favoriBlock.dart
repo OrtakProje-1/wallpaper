@@ -1,77 +1,75 @@
-import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
 import 'package:rxdart/rxdart.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:wallpaperApp/Models/favoriImage.dart';
-import 'package:wallpaperApp/Models/hits.dart';
+import 'package:wallpaper/Models/hit.dart';
+import 'package:wallpaper/main.dart';
 
-abstract class Block {
-  dispose();
-}
+// abstract class Block {
+//   dispose();
+// }
 
-class FavoriBlock extends Block {
-  FavoriBlock() {
-    initStream();
-    retrieveFavourite();
-  }
+class FavoriBlock {
+  static FavoriBlock? _instance;
+  FavoriBlock._();
+  factory FavoriBlock() => _instance ??= FavoriBlock._();
 
-  SharedPreferences _prefs;
-  BehaviorSubject<List<FavoriImage>> _favoriImage;
-  BehaviorSubject<bool> quality;
 
-  List<FavoriImage> get favoriImages => _favoriImage.value;
-  Stream<List<FavoriImage>> get favStream => _favoriImage.stream;
+Box<List<String>>? favoriBox;
+  late BehaviorSubject<List<Hit>> _favoriImage;
+  BehaviorSubject<bool>? quality;
+
+  List<Hit> get favoriImages => _favoriImage.value;
+  Stream<List<Hit>> get favStream => _favoriImage.stream;
 
   initStream() async {
-    quality=BehaviorSubject.seeded(false); 
+    quality = BehaviorSubject.seeded(false);
     _favoriImage = BehaviorSubject.seeded([]);
   }
 
-  addFavourites(Hits h) {
-    List<FavoriImage> favImage = favoriImages;
-    favImage.add(FavoriImage.builder(h));
+  addFavourites(Hit h) {
+    List<Hit> favImage = favoriImages;
+    favImage.add(h);
     _favoriImage.add(favImage);
     saveFavoriImage(favImage);
   }
 
-
-  removeFavourites(int id) {
-    List<FavoriImage> favImage = favoriImages;
+  removeFavourites(int? id) {
+    List<Hit> favImage = favoriImages;
     int index = favImage.indexWhere((e) => e.id == id);
     favImage.removeAt(index);
     _favoriImage.add(favImage);
     saveFavoriImage(favImage);
   }
 
-  retrieveFavourite() async {
-    _prefs = await SharedPreferences.getInstance();
-    List<String> stringFavori=[];
+  getFavoriteImagesFromHive() async {
+    List<String> stringFavori = [];
     try {
-      stringFavori = _prefs.getStringList("favori") ?? [];
-    } catch (e) {
-    }
-    if (stringFavori.isNotEmpty) {
-      List<FavoriImage> favImage = [];
-      for (var i in stringFavori) {
-        favImage.add(FavoriImage.fromJson(jsonDecode(i)));
+      stringFavori = (favoriBox!.get("favories", defaultValue: []))!;
+      if (stringFavori.isNotEmpty) {
+        List<Hit> favImage = [];
+        for (var i in stringFavori) {
+          favImage.add(Hit.fromJson(jsonDecode(i)));
+        }
+        _favoriImage.add(favImage);
       }
-      _favoriImage.add(favImage);
+    } catch (e) {
+      debugPrint(e.toString());
     }
   }
 
-  saveFavoriImage(List<FavoriImage> favs) async {
+  saveFavoriImage(List<Hit> favs) async {
     List<String> stringList = [];
     for (var i in favs) {
       stringList.add(jsonEncode(i.toMap()));
     }
-    bool result = await _prefs.setStringList("favori", stringList);
-    print("sonuc= $result");
+    await favoriBox!.put("favories", stringList);
   }
 
   @override
   void dispose() {
     _favoriImage.close();
-    quality.close();
+    quality!.close();
   }
 }

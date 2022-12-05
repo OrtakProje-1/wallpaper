@@ -1,35 +1,35 @@
-import 'package:wallpaperApp/Models/hits.dart';
+import 'package:wallpaper/Models/hit.dart';
 
 class FavoriImage {
-  int id;
+  int? id;
 
-  String pageURL;
+  String? pageURL;
 
-  String type;
+  String? type;
 
-  String tags;
+  String? tags;
 
-  String previewURL;
+  String? previewURL;
 
-  String largeImageURL;
+  String? largeImageURL;
 
-  String imageURL;
+  String? imageURL;
 
-  int views;
+  int? views;
 
-  int downloads;
+  int? downloads;
 
-  int favorites;
+  int? favorites;
 
-  int likes;
+  int? likes;
 
-  int comments;
+  int? comments;
 
-  int userId;
+  int? userId;
 
-  String user;
+  String? user;
 
-  String userImageURL;
+  String? userImageURL;
 
   FavoriImage(
       {this.comments,
@@ -86,13 +86,12 @@ class FavoriImage {
     this.favorites = map["favorites"];
   }
 
-  static FavoriImage builder(Hits h) {
+  static FavoriImage builder(Hit h) {
     return FavoriImage(
         comments: h.comments,
         downloads: h.downloads,
-        favorites: h.favorites,
         id: h.id,
-        imageURL: h.imageURL,
+        imageURL: h.largeImageURL,
         largeImageURL: h.largeImageURL,
         likes: h.likes,
         pageURL: h.pageURL,

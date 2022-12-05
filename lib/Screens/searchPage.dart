@@ -1,16 +1,16 @@
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:provider/provider.dart';
-import 'package:wallpaperApp/Bloc/favoriBlock.dart';
-import 'package:wallpaperApp/Bloc/searchBloc.dart';
-import 'package:wallpaperApp/Bloc/searchBloc/searchEvent.dart';
-import 'package:wallpaperApp/Bloc/searchBloc/serchState.dart';
-import 'package:wallpaperApp/Class/builClass.dart';
-import 'package:wallpaperApp/Constant/navigationConstant.dart';
+import 'package:wallpaper/Bloc/favoriBlock.dart';
+import 'package:wallpaper/Bloc/searchBloc.dart';
+import 'package:wallpaper/Bloc/searchBloc/searchEvent.dart';
+import 'package:wallpaper/Bloc/searchBloc/serchState.dart';
+import 'package:wallpaper/Class/builClass.dart';
+import 'package:wallpaper/Constant/navigationConstant.dart';
 
 class SearchPage extends StatefulWidget {
-  SearchPage({Key key}) : super(key: key);
+  SearchPage({Key? key}) : super(key: key);
 
   @override
   _SearchPageState createState() => _SearchPageState();
@@ -21,7 +21,7 @@ class _SearchPageState extends State<SearchPage> with Navigation, BuildClass {
 
   @override
   Widget build(BuildContext context) {
-    final _favBloc=Provider.of<FavoriBlock>(context);
+    final _favBloc = Provider.of<FavoriBlock>(context);
     return Material(
       child: Scaffold(
         body: NestedScrollView(
@@ -33,27 +33,29 @@ class _SearchPageState extends State<SearchPage> with Navigation, BuildClass {
               actions: <Widget>[
                 BlocBuilder<SearchBloc, ImageSearchState>(
                   key: GlobalKey(),
-              cubit: BlocProvider.of<SearchBloc>(context),
-              builder: (BuildContext context, ImageSearchState state) {
-                if(!(state is ImageSearchEmpty)){
-                  return IconButton(
-                  onPressed: () {
-                    searchQuery.clear();
-                    BlocProvider.of<SearchBloc>(context)
-                        .add(ChangeText(searchQuery.text));
+                  bloc: BlocProvider.of<SearchBloc>(context),
+                  builder: (BuildContext context, ImageSearchState state) {
+                    if (!(state is ImageSearchEmpty)) {
+                      return IconButton(
+                        onPressed: () {
+                          searchQuery.clear();
+                          BlocProvider.of<SearchBloc>(context)
+                              .add(ChangeText(searchQuery.text));
+                        },
+                        icon: Icon(Icons.clear),
+                      );
+                    } else
+                      return SizedBox();
                   },
-                  icon: Icon(Icons.clear),
-                );
-                }else return SizedBox();
-              },
                 ),
-              
               ],
               backgroundColor: Colors.white,
               title: TextField(
-                style: TextStyle(color: Colors.red.shade500,decoration: TextDecoration.none),
+                style: TextStyle(
+                    color: Colors.red.shade500,
+                    decoration: TextDecoration.none),
                 autocorrect: true,
-                cursorColor:Colors.redAccent,
+                cursorColor: Colors.redAccent,
                 cursorRadius: Radius.circular(6),
                 controller: searchQuery,
                 autofocus: true,
@@ -75,31 +77,43 @@ class _SearchPageState extends State<SearchPage> with Navigation, BuildClass {
           ],
           body: BlocBuilder<SearchBloc, ImageSearchState>(
               key: GlobalKey(),
-              cubit: BlocProvider.of<SearchBloc>(context),
+              bloc: BlocProvider.of<SearchBloc>(context),
               builder: (BuildContext context, state) {
-              if(state is ImageSearchTextState) {
+                if (state is ImageSearchTextState) {
                   return Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: <Widget>[
-                        Icon(Icons.search,size:55,color: Colors.red,),
-                        SizedBox(height: 20,),
+                        Icon(
+                          Icons.search,
+                          size: 55,
+                          color: Colors.red,
+                        ),
+                        SizedBox(
+                          height: 20,
+                        ),
                         Text("Aramak için klavyedeki arama tuşuna basınız"),
                       ],
                     ),
                   );
-                }else if(state is ImageSearchEmptySuccess){
+                } else if (state is ImageSearchEmptySuccess) {
                   return Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: <Widget>[
-                        Icon(Icons.error_outline,size:55,color: Colors.red,),
-                        SizedBox(height: 20,),
+                        Icon(
+                          Icons.error_outline,
+                          size: 55,
+                          color: Colors.red,
+                        ),
+                        SizedBox(
+                          height: 20,
+                        ),
                         Text("Üzgünüm hiç sonuç bulamadim"),
                       ],
                     ),
                   );
-                }else  if (state is ImageSearchLoading) {
+                } else if (state is ImageSearchLoading) {
                   return Center(
                     child: CircularProgressIndicator(),
                   );
@@ -108,8 +122,14 @@ class _SearchPageState extends State<SearchPage> with Navigation, BuildClass {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: <Widget>[
-                        Icon(Icons.edit,size:55,color: Colors.red,),
-                        SizedBox(height:20,),
+                        Icon(
+                          Icons.edit,
+                          size: 55,
+                          color: Colors.red,
+                        ),
+                        SizedBox(
+                          height: 20,
+                        ),
                         Text("Lütfen birşeyler yaz"),
                       ],
                     ),
@@ -118,15 +138,16 @@ class _SearchPageState extends State<SearchPage> with Navigation, BuildClass {
                   return StreamBuilder<bool>(
                     stream: _favBloc.quality,
                     initialData: false,
-                    builder: (c,q){
-                      return buildStaggeredGridView(state.wallpaper.hits,_favBloc,q.data);
+                    builder: (c, q) {
+                      return buildStaggeredGridView(
+                          context, state.wallpaper.hits!, _favBloc, q.data);
                     },
                   );
                 } else if (state is ImageSearchError) {
                   return Center(
                     child: Text("Bilinmeyen hata ${state.error}"),
                   );
-                }else{
+                } else {
                   return SizedBox();
                 }
               }),

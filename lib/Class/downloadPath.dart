@@ -1,4 +1,3 @@
-
 import 'package:path_provider/path_provider.dart';
 
 class DownloadPath {
@@ -8,12 +7,10 @@ class DownloadPath {
 
   factory DownloadPath() => _downloadPath;
 
-  Future<String> findLocalPath() async {
-    
-    final directory = await getExternalStorageDirectories(type: StorageDirectory.downloads);
-    print("downloadPath= ${directory[0].path}");
-    return directory[0].path;
+  Future<String?> findLocalPath() async {
+    final directory =
+        await getExternalStorageDirectories(type: StorageDirectory.downloads);
+    if ((directory ?? []).isEmpty) return null;
+    return directory![0].path;
   }
-
-  
 }

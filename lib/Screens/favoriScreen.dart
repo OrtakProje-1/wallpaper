@@ -1,33 +1,33 @@
 import 'dart:io';
-import 'dart:typed_data';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
-import 'package:wallpaperApp/Bloc/favoriBlock.dart';
-import 'package:wallpaperApp/Class/builClass.dart';
-import 'package:wallpaperApp/Constant/navigationConstant.dart';
-import 'package:wallpaperApp/Models/downloadTask.dart';
-import 'package:wallpaperApp/Models/favoriImage.dart';
-import 'package:wallpaperApp/Service/downloader.dart';
-import 'package:esys_flutter_share/esys_flutter_share.dart';
+import 'package:share/share.dart';
+import 'package:wallpaper/Bloc/favoriBlock.dart';
+import 'package:wallpaper/Class/builClass.dart';
+import 'package:wallpaper/Constant/navigationConstant.dart';
+import 'package:wallpaper/Models/downloadTask.dart';
+import 'package:wallpaper/Models/favoriImage.dart';
+import 'package:wallpaper/Models/hit.dart';
+import 'package:wallpaper/Service/downloader.dart';
 
 class Favourites extends StatefulWidget {
-  Favourites({Key key}) : super(key: key);
+  Favourites({Key? key}) : super(key: key);
 
   @override
   _FavouritesState createState() => _FavouritesState();
 }
 
-class _FavouritesState extends State<Favourites> with Navigation {
+class _FavouritesState extends State<Favourites> with Navigation, BuildClass {
   @override
   Widget build(BuildContext context) {
     final _favBloc = Provider.of<FavoriBlock>(context);
     return Scaffold(
       body: NestedScrollView(
         headerSliverBuilder: (c, b) => [
-          SliverAppBar(
+          const SliverAppBar(
             iconTheme: IconThemeData(color: Colors.red),
             title: Text(
               "Favorilerim",
@@ -40,18 +40,18 @@ class _FavouritesState extends State<Favourites> with Navigation {
             centerTitle: true,
           ),
         ],
-        body: StreamBuilder<List<FavoriImage>>(
+        body: StreamBuilder<List<Hit>>(
           stream: _favBloc.favStream,
-          initialData: [],
           builder: (c, hits) {
             if (hits.hasData) {
               return StreamBuilder<bool>(
                 initialData: false,
                 stream: _favBloc.quality,
-                builder: (c,q)=>buildStaggeredGridView(hits.data, _favBloc,q.data),
+                builder: (c, q) => buildStaggeredGridView(
+                    context, hits.data!, _favBloc, q.data),
               );
             } else {
-              return Center(
+              return const Center(
                 child: CircularProgressIndicator(),
               );
             }
@@ -60,98 +60,14 @@ class _FavouritesState extends State<Favourites> with Navigation {
       ),
     );
   }
-
-  StaggeredGridView buildStaggeredGridView(
-      List<FavoriImage> hits, FavoriBlock bloc,bool quality) {
-    return StaggeredGridView.countBuilder(
-      padding: EdgeInsets.all(4),
-      shrinkWrap: true,
-      physics: ScrollPhysics(),
-      addAutomaticKeepAlives: true,
-      crossAxisCount: 4,
-      itemCount: hits.length,
-      staggeredTileBuilder: (int index) =>
-          StaggeredTile.count(2, index.isEven ? 4 : 3),
-      mainAxisSpacing: 8.0,
-      crossAxisSpacing: 8.0,
-      itemBuilder: (BuildContext context, int index) =>
-          buildImage(context, hits, index, bloc,quality),
-    );
-  }
-
-  Widget buildImage(
-      BuildContext c, List<FavoriImage> h, int index, FavoriBlock bloc,bool quality) {
-    return InkWell(
-      radius: 15,
-      borderRadius: BorderRadius.circular(15),
-      onTap: () {
-        navigation(
-            c,
-            ImageDetails(
-              hits: h,
-              index: index,
-              quality: quality,
-            ));
-      },
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(15),
-        child: Hero(
-          tag: h[index].id,
-          child: Stack(
-            children: [
-              Positioned(
-                bottom: 0,
-                right: 0,
-                left: 0,
-                top: 0,
-                child: Image.network(
-                quality?h[index].largeImageURL:h[index].previewURL,
-                  fit: BoxFit.cover,
-                  loadingBuilder: (context, child, loadingProgress) {
-                    if (loadingProgress == null) return child;
-                    return Container(
-                      color: Colors.white24,
-                      child: Center(
-                        child: CircularProgressIndicator(
-                          value: loadingProgress.expectedTotalBytes != null
-                              ? loadingProgress.cumulativeBytesLoaded /
-                                  loadingProgress.expectedTotalBytes
-                              : null,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-              Positioned(
-                top: 10,
-                right: 10,
-                child: Container(
-                    decoration: BoxDecoration(
-                        shape: BoxShape.circle, color: Colors.white70),
-                    child: IconButton(
-                        color: Colors.white,
-                        icon: Icon(
-                          Icons.delete_outline,
-                          color: Colors.red,
-                        ),
-                        onPressed: () {
-                          bloc.removeFavourites(h[index].id);
-                        })),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 class ImageDetails extends StatefulWidget {
-  final List<FavoriImage> hits;
-  final int index;
+  final List<FavoriImage>? hits;
+  final int? index;
   final bool quality;
-  ImageDetails({Key key, this.hits, this.index,this.quality=false}) : super(key: key);
+  ImageDetails({Key? key, this.hits, this.index, this.quality = false})
+      : super(key: key);
 
   @override
   _ImageDetailsState createState() => _ImageDetailsState();
@@ -162,18 +78,18 @@ class _ImageDetailsState extends State<ImageDetails>
   final scaffoldKey = GlobalKey<ScaffoldState>();
   Downloader downloader = Downloader();
   bool isOpacity = true;
-  PageController _controller;
-  int index;
+  PageController? _controller;
+  int? index;
 
   @override
   initState() {
     super.initState();
     index = widget.index;
-    _controller = PageController(initialPage: index);
+    _controller = PageController(initialPage: index!);
   }
 
   showSnack(String mesaj) {
-    scaffoldKey.currentState.showSnackBar(SnackBar(
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(mesaj),
         duration: Duration(milliseconds: 2000),
         action: SnackBarAction(label: "Tamam", onPressed: () {})));
@@ -217,15 +133,17 @@ class _ImageDetailsState extends State<ImageDetails>
                 });
               },
               controller: _controller,
-              itemCount: widget.hits.length,
+              itemCount: widget.hits!.length,
               scrollDirection: Axis.horizontal,
               itemBuilder: (c, i) => Hero(
-                tag: widget.hits[i].id,
+                tag: widget.hits![i].id!,
                 child: Container(
                   width: size.width,
                   height: size.height,
                   child: Image.network(
-                 widget.quality?widget.hits[i].largeImageURL:widget.hits[i].previewURL,
+                    widget.quality
+                        ? widget.hits![i].largeImageURL!
+                        : widget.hits![i].previewURL!,
                     fit: BoxFit.cover,
                     loadingBuilder: (context, child, loadingProgress) {
                       if (loadingProgress == null) return child;
@@ -233,7 +151,7 @@ class _ImageDetailsState extends State<ImageDetails>
                         child: CircularProgressIndicator(
                           value: loadingProgress.expectedTotalBytes != null
                               ? loadingProgress.cumulativeBytesLoaded /
-                                  loadingProgress.expectedTotalBytes
+                                  loadingProgress.expectedTotalBytes!
                               : null,
                         ),
                       );
@@ -291,12 +209,12 @@ class _ImageDetailsState extends State<ImageDetails>
                               color: Colors.red,
                             ),
                             "Duvar Kağıdı Yap", onTap: () async {
-                          int screen = await buildSelectWallpaper(context);
+                          int? screen = await buildSelectWallpaper(context);
                           if (screen != 0) {
                             buildPleaseWaitAlert(context);
                             bool result =
                                 await downloader.chachDownloadandSetWallpaper(
-                                    widget.hits[index].largeImageURL, screen);
+                                    widget.hits![index!].largeImageURL, screen);
                             showSnack(result
                                 ? "Duvar kağıdı değiştirildi"
                                 : "Üzgünüm! Bir hata oluştu");
@@ -307,7 +225,7 @@ class _ImageDetailsState extends State<ImageDetails>
                             Icon(Icons.cloud_download, color: Colors.red),
                             "İndir", onTap: () async {
                           Task newTask = Task(
-                              link: widget.hits[index].largeImageURL,
+                              link: widget.hits![index!].largeImageURL,
                               name: DateTime.now()
                                   .millisecondsSinceEpoch
                                   .toString());
@@ -322,16 +240,19 @@ class _ImageDetailsState extends State<ImageDetails>
                             Icon(Icons.share, color: Colors.red), "Paylaş",
                             onTap: () async {
                           var request = await HttpClient().getUrl(Uri.parse(
-                              widget.hits[widget.index].largeImageURL));
+                              widget.hits![widget.index!].largeImageURL!));
                           var response = await request.close();
                           Uint8List bytes =
                               await consolidateHttpClientResponseBytes(
                                   response);
-                          Share.file(
-                              "Paylaşmak istediğin platformu seç", "image.jpg", bytes, "image/jpg",
-                              text:
-                                  "H~Wallpaper ile bulduğum bu resim hoşuna gidecek\nHemen sende indir \nAndroid: Çok yakında\nIos: Çok yakında");
-
+                          getTemporaryDirectory().then((value) async {
+                            File temp = File(value.path + "/temp.jpg");
+                            File newFile = await temp.writeAsBytes(bytes);
+                            Share.shareFiles([newFile.path],
+                                mimeTypes: ["image/jpg"],
+                                text:
+                                    "H~Wallpaper ile bulduğum bu resim hoşuna gidecek\nHemen sende indir \nAndroid: Çok yakında\nIos: Çok yakında");
+                          });
                           // await FlutterShare.share(
                           // title: 'Fotoğraf',
                           // text: 'H~Wallpaper ile bulduğum bu resim hoşuna gidecek',
@@ -376,28 +297,30 @@ class _ImageDetailsState extends State<ImageDetails>
                                     ),
                                     if (e == 1)
                                       Text(
-                                        widget.hits[index].favorites.toString(),
+                                        widget.hits![index!].favorites
+                                            .toString(),
                                         style: TextStyle(
                                             color: Colors.white,
                                             fontWeight: FontWeight.bold),
                                       ),
                                     if (e == 2)
                                       Text(
-                                        widget.hits[index].downloads.toString(),
+                                        widget.hits![index!].downloads
+                                            .toString(),
                                         style: TextStyle(
                                             color: Colors.white,
                                             fontWeight: FontWeight.bold),
                                       ),
                                     if (e == 3)
                                       Text(
-                                        widget.hits[index].likes.toString(),
+                                        widget.hits![index!].likes.toString(),
                                         style: TextStyle(
                                             color: Colors.white,
                                             fontWeight: FontWeight.bold),
                                       ),
                                     if (e == 4)
                                       Text(
-                                        widget.hits[index].views.toString(),
+                                        widget.hits![index!].views.toString(),
                                         style: TextStyle(
                                             color: Colors.white,
                                             fontWeight: FontWeight.bold),

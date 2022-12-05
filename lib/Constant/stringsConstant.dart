@@ -37,11 +37,11 @@ class Strings {
 
   static const String API_KEY = "15117659-b05c4be2a084c812264bc2589";
 
-  static const String API_URL="https://pixabay.com/api/?key=$API_KEY&per_page=200&lang=tr&safesearch=true";
+  static const String API_URL =
+      "https://pixabay.com/api/?key=$API_KEY&per_page=200&lang=tr&safesearch=true";
   //Base URL
   static const SEARCH_URL =
-      "https://pixabay.com/api/?key=$API_KEY&image_type=photo&pretty=true&safesearch=true&lang=tr&per_page=40&q=";
-
+      "https://pixabay.com/api/?key=$API_KEY&per_page=200&image_type=photo&pretty=true&safesearch=true&lang=tr&q=";
 
   //Errors
   static const String noInternet = "Lütfen internet bağlantınızı kontrol edin!";
